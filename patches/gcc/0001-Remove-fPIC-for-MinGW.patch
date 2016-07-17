@@ -1,0 +1,43 @@
+From a720e4682798a04bf19a4aa83537e7d0b762ea7d Mon Sep 17 00:00:00 2001
+From: Nobody <nobody@localhost>
+Date: Fri, 13 Sep 2013 18:30:12 -0500
+Subject: [PATCH] Remove -fPIC for MinGW
+
+---
+ libbacktrace/configure    | 4 ++++
+ libbacktrace/configure.ac | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/libbacktrace/configure b/libbacktrace/configure
+index f4f9d05..c6b93e8 100644
+--- a/libbacktrace/configure
++++ b/libbacktrace/configure
+@@ -11698,6 +11698,10 @@ fi
+ PIC_FLAG=
+ if test -n "${with_target_subdir}"; then
+   PIC_FLAG=-fPIC
++  case "${host}" in
++    *mingw*) PIC_FLAG="";;
++    *) PIC_FLAG=-fPIC ;;
++  esac
+ fi
+ # Similarly, use -fPIC with --enable-host-shared:
+ # Check whether --enable-host-shared was given.
+diff --git a/libbacktrace/configure.ac b/libbacktrace/configure.ac
+index 878bd2c..fdeab26 100644
+--- a/libbacktrace/configure.ac
++++ b/libbacktrace/configure.ac
+@@ -164,6 +164,10 @@ fi
+ PIC_FLAG=
+ if test -n "${with_target_subdir}"; then
+   PIC_FLAG=-fPIC
++   case "${host}" in
++     *mingw*) PIC_FLAG="";;
++     *) PIC_FLAG=-fPIC ;;
++   esac
+ fi
+ # Similarly, use -fPIC with --enable-host-shared:
+ AC_ARG_ENABLE(host-shared,
+-- 
+1.9.2.msysgit.0
+

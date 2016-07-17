@@ -1,0 +1,261 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+#-------------------------------------------------------------------------------
+#
+# GCC build script
+# Author: Sebastien Alaiwan (inspired by the one made by venix)
+# Date: 2016-07-11
+#
+# The basic steps are:
+# 0) Download and extract all the required packages
+# 1) build the binutils, ./configure with --target=$(TARGET)
+# 2) install the binutils: make install
+# 3) build the core-gcc, configure with --target=$(TARGET), make all-gcc
+# 4) install the core-gcc: make install-gcc
+# 5) build the GNU libc runtime (libc) using the core-gcc
+# 6) finish building gcc: go back to the core-gcc build directory and run "make"
+# 7) install gcc: make install
+#-------------------------------------------------------------------------------
+readonly VENDOR=ace # replace with anything you like
+readonly TARGET=x86_64-${VENDOR}-linux-gnu
+readonly PREFIX=/tmp/toolchains/gcc-$TARGET
+
+readonly SERVER_URL=http://ftp.gnu.org/gnu
+readonly GCC_VERSION=5.3.0
+readonly BINUTILS_VERSION=2.26
+readonly GDC_COMMIT=55bb5b0e5da16522aeaa9ec62dfc5a23fe2be44c
+
+readonly GCC_LANGS="c,c++,d"
+
+readonly BIN=bin
+readonly ARCHIVES=/tmp/archives
+
+readonly scriptDir=$(realpath $(dirname $0))
+
+# Things like CC="ccache gcc" don't play nice with cross builds
+unset CC
+unset CXX
+
+readonly MAKE="make -j`nproc` -k"
+export LDFLAGS=-s
+
+function main
+{
+  mkdir -p $ARCHIVES
+  mkdir -p src bin
+
+  lazy binutils_download
+  lazy binutils_build
+
+  lazy glibc_download
+  lazy glibc_install
+
+  lazy gcc_download
+  lazy gcc_extract
+
+  lazy gdc_download
+  lazy gdc_apply
+
+  lazy gcc_configure
+  lazy gcc_standalone_build
+  lazy gcc_standalone_install
+
+  lazy gcc_build
+  lazy gcc_install
+
+  echo "==============="
+  echo "Done"
+}
+
+#-------------------------------------------------------------------------------
+# BINUTILS
+#-------------------------------------------------------------------------------
+readonly BINUTILS_SRC=src/binutils
+readonly BINUTILS_BIN=bin/binutils
+
+function binutils_download
+{
+	atomic_wget "$SERVER_URL/binutils/binutils-$BINUTILS_VERSION.tar.bz2" "$ARCHIVES/binutils.tar.bz2"
+}
+
+function binutils_build
+{
+  extract_to "$ARCHIVES/binutils.tar.bz2" $BINUTILS_SRC
+
+	rm -rf "$BINUTILS_BIN"
+	mkdir -p "$BINUTILS_BIN"
+  readonly DIR=$(realpath $BINUTILS_SRC)
+	pushd "$BINUTILS_BIN"
+  $DIR/configure \
+    --prefix="$PREFIX" \
+    --target=$TARGET \
+    --disable-nls --with-gcc --with-gnu-as --with-gnu-ld \
+    --disable-shared 2>&1 >/dev/null
+  popd
+
+	$MAKE -C "$BINUTILS_BIN" CFLAGS="-O2 -fno-exceptions" LDFLAGS="-s"
+	$MAKE -C "$BINUTILS_BIN" install
+}
+
+#-------------------------------------------------------------------------------
+# GLIBC (LIBC)
+#-------------------------------------------------------------------------------
+
+function glibc_download
+{
+  atomic_wget "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.4.1.tar.xz" "$ARCHIVES/linux.tar.xz"
+  atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-2.22.tar.xz" "$ARCHIVES/glibc.tar.xz"
+}
+
+function glibc_install
+{
+  extract_to $ARCHIVES/linux.tar.xz src/linux
+  $MAKE -C src/linux ARCH=x86 INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
+
+  extract_to $ARCHIVES/glibc.tar.xz src/glibc
+  mkdir -p bin/glibc
+
+  pushd bin/glibc
+  ../../src/glibc/configure --prefix=$PREFIX/$TARGET --host=$TARGET --target=$TARGET --with-headers=$PREFIX/$TARGET/include --without-selinux
+  popd
+
+  $MAKE -C bin/glibc
+  $MAKE -C bin/glibc install
+}
+
+##-------------------------------------------------------------------------------
+## GCC CORE
+##-------------------------------------------------------------------------------
+readonly GCC_SRC=src/gcc
+readonly GCC_BIN=bin/gcc
+
+function gcc_download
+{
+  atomic_wget "$SERVER_URL/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2" $ARCHIVES/gcc.tar.bz2
+}
+
+function gcc_extract
+{
+  extract_to $ARCHIVES/gcc.tar.bz2 $GCC_SRC
+
+  pushd $GCC_SRC
+  ./contrib/download_prerequisites
+  popd
+}
+
+function gcc_configure
+{
+  local dir=../../$GCC_SRC # 'dir' must be a relative path, otherwise GMP will not build under Msy2/Cygwin
+  mkdir -p "$GCC_BIN"
+  pushd $GCC_BIN
+  $dir/configure \
+    -v \
+    --disable-bootstrap \
+     --enable-targets=all \
+     --prefix="$PREFIX" \
+     --target="$TARGET" \
+     --enable-languages=$GCC_LANGS \
+     --with-gcc --with-gnu-ld --with-gnu-as \
+     --enable-threads \
+     --disable-nls \
+     --disable-win32-registry \
+     --disable-shared \
+     --disable-multilib \
+     --enable-sjlj-exceptions \
+     --disable-java-awt \
+     --without-x \
+     --enable-lto
+  popd
+}
+
+function gcc_standalone_build
+{
+  $MAKE all-gcc           -C "$GCC_BIN"
+  $MAKE all-target-libgcc -C "$GCC_BIN"
+}
+
+function gcc_standalone_install
+{
+  $MAKE -C "$GCC_BIN" install-gcc
+}
+
+function gcc_build
+{
+  $MAKE all -C "$GCC_BIN"
+}
+
+function gcc_install
+{
+	$MAKE install -C "$GCC_BIN"
+}
+
+#------------------------------------------------------------------------------
+# GDC
+#------------------------------------------------------------------------------
+function gdc_download
+{
+  rm -rf src/gdc
+  git clone https://github.com/D-Programming-GDC/GDC.git src/gdc
+  pushd src/gdc
+  git checkout origin/gdc-5
+  git checkout $GDC_COMMIT
+  popd
+}
+
+function gdc_apply
+{
+	pushd src/gdc
+  ./setup-gcc.sh ../gcc
+  popd
+}
+
+#------------------------------------------------------------------------------
+# Generic stuff
+#------------------------------------------------------------------------------
+
+function atomic_wget
+{
+  local readonly url=$1
+  local readonly output=$2
+  if test -f $output ; then
+    echo "Already downloaded: $output"
+    return 0;
+  fi
+  mkdir -p $(dirname $output)
+  wget "$url" -O $output
+}
+
+function extract_to
+{
+  local file=$1
+  local dir=$2
+
+	tar xlf "$file"
+	rm -rf "$dir"
+	mv "`tar tlf $file 2>/dev/null | head -n 1 | cut -f 1 -d '/'`" "$dir"
+}
+
+function lazy
+{
+  local readonly func="$1"
+
+  if [ -f $BIN/flags/$func ] ; then
+    return 0
+  fi
+
+  echo "$func ..."
+  $func & # fork: prevent the callee to change the caller's environment
+  pid=$!
+  if ! wait $pid ; then
+    echo "Failure with: $func"
+    return 1
+  fi
+
+  mkdir -p $BIN/flags
+  touch $BIN/flags/$func
+}
+
+main "$@"
+
