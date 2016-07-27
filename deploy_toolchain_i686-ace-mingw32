@@ -29,7 +29,6 @@ readonly GDC_COMMIT=ad1f2a22dbcbc30f7d12593184e59b607404b25a # (just before the 
 
 readonly GCC_LANGS="c,c++,d"
 
-readonly BIN=bin
 readonly ARCHIVES=/tmp/archives
 
 readonly scriptDir=$(realpath $(dirname $0))
@@ -168,7 +167,7 @@ function gcc_extract
 
 function gcc_configure
 {
-  local dir=../../$GCC_SRC # 'dir' must be a relative path, otherwise GMP will not build under Msy2/Cygwin
+  local dir=../../$GCC_SRC # 'dir' must be a relative path, otherwise GMP will not build under Msys2/Cygwin
   mkdir -p "$GCC_BIN"
   pushd $GCC_BIN
   $dir/configure \
@@ -265,7 +264,8 @@ function lazy
 {
   local readonly func="$1"
 
-  if [ -f $BIN/flags/$func ] ; then
+  mkdir -p flags
+  if [ -f flags/$func ] ; then
     return 0
   fi
 
@@ -277,8 +277,7 @@ function lazy
     return 1
   fi
 
-  mkdir -p $BIN/flags
-  touch $BIN/flags/$func
+  touch flags/$func
 }
 
 main "$@"

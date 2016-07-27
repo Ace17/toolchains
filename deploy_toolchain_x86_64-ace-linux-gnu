@@ -29,7 +29,6 @@ readonly GDC_COMMIT=55bb5b0e5da16522aeaa9ec62dfc5a23fe2be44c
 
 readonly GCC_LANGS="c,c++,d"
 
-readonly BIN=bin
 readonly ARCHIVES=/tmp/archives
 
 readonly scriptDir=$(realpath $(dirname $0))
@@ -240,7 +239,8 @@ function lazy
 {
   local readonly func="$1"
 
-  if [ -f $BIN/flags/$func ] ; then
+  mkdir -p flags
+  if [ -f flags/$func ] ; then
     return 0
   fi
 
@@ -252,8 +252,7 @@ function lazy
     return 1
   fi
 
-  mkdir -p $BIN/flags
-  touch $BIN/flags/$func
+  touch flags/$func
 }
 
 main "$@"
