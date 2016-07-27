@@ -20,7 +20,7 @@ set -euo pipefail
 #-------------------------------------------------------------------------------
 readonly VENDOR=ace # replace with anything you like
 readonly TARGET=i686-${VENDOR}-mingw32
-readonly PREFIX=/tmp/toolchains/gcc-$TARGET
+readonly PREFIX=/tmp/toolchains/gcc-$TARGET # the resulting toolchain will land here
 
 readonly SERVER_URL=http://ftp.gnu.org/gnu
 readonly GCC_VERSION=5.3.0
