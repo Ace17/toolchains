@@ -23,7 +23,7 @@ readonly TARGET=x86_64-${VENDOR}-linux-gnu
 readonly PREFIX=/tmp/toolchains/gcc-$TARGET # the resulting toolchain will land here
 
 readonly SERVER_URL=http://ftp.gnu.org/gnu
-readonly GCC_VERSION=5.3.0
+readonly GCC_VERSION=5.4.0
 readonly BINUTILS_VERSION=2.26
 readonly GDC_COMMIT=55bb5b0e5da16522aeaa9ec62dfc5a23fe2be44c
 

@@ -23,7 +23,7 @@ readonly TARGET=i686-${VENDOR}-mingw32
 readonly PREFIX=/tmp/toolchains/gcc-$TARGET # the resulting toolchain will land here
 
 readonly SERVER_URL=http://ftp.gnu.org/gnu
-readonly GCC_VERSION=5.3.0
+readonly GCC_VERSION=5.4.0
 readonly BINUTILS_VERSION=2.26
 readonly GDC_COMMIT=ad1f2a22dbcbc30f7d12593184e59b607404b25a # (just before the upgrade to 2.68 FE breakage)
 
