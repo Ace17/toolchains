@@ -120,7 +120,13 @@ function glibc_build
   mkdir -p bin/glibc
 
   pushd bin/glibc
-  ../../src/glibc/configure --prefix=$PREFIX/$TARGET --host=$TARGET --target=$TARGET --with-headers=$PREFIX/$TARGET/include --without-selinux
+  ../../src/glibc/configure \
+    --prefix=$PREFIX/$TARGET \
+    --host=$TARGET \
+    --target=$TARGET \
+    --with-headers=$PREFIX/$TARGET/include \
+    --without-selinux \
+    --disable-werror
   popd
 
   $MAKE -C bin/glibc
