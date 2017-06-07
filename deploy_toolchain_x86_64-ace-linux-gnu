@@ -25,6 +25,8 @@ readonly PREFIX=/tmp/toolchains/gcc-$TARGET # the resulting toolchain will land 
 readonly SERVER_URL=http://ftp.gnu.org/gnu
 readonly GCC_VERSION=5.4.0
 readonly BINUTILS_VERSION=2.26
+readonly GLIBC_VERSION=2.22
+readonly KERNEL_VERSION=4.4.1
 readonly GDC_COMMIT=55bb5b0e5da16522aeaa9ec62dfc5a23fe2be44c
 
 readonly GCC_LANGS="c,c++,d"
@@ -74,26 +76,27 @@ readonly BINUTILS_BIN=bin/binutils
 
 function binutils_download
 {
-	atomic_wget "$SERVER_URL/binutils/binutils-$BINUTILS_VERSION.tar.bz2" "$ARCHIVES/binutils.tar.bz2"
+  atomic_wget "$SERVER_URL/binutils/binutils-$BINUTILS_VERSION.tar.bz2" "$ARCHIVES/binutils.tar.bz2"
 }
 
 function binutils_build
 {
   extract_to "$ARCHIVES/binutils.tar.bz2" $BINUTILS_SRC
 
-	rm -rf "$BINUTILS_BIN"
-	mkdir -p "$BINUTILS_BIN"
+  rm -rf "$BINUTILS_BIN"
+  mkdir -p "$BINUTILS_BIN"
   readonly DIR=$(realpath $BINUTILS_SRC)
-	pushd "$BINUTILS_BIN"
+  pushd "$BINUTILS_BIN"
   $DIR/configure \
     --prefix="$PREFIX" \
     --target=$TARGET \
     --disable-nls --with-gcc --with-gnu-as --with-gnu-ld \
+    --disable-werror \
     --disable-shared 2>&1 >/dev/null
   popd
 
-	$MAKE -C "$BINUTILS_BIN" CFLAGS="-O2 -fno-exceptions" LDFLAGS="-s"
-	$MAKE -C "$BINUTILS_BIN" install
+  $MAKE -C "$BINUTILS_BIN" CFLAGS="-O2 -fno-exceptions" LDFLAGS="-s"
+  $MAKE -C "$BINUTILS_BIN" install
 }
 
 #-------------------------------------------------------------------------------
@@ -102,20 +105,29 @@ function binutils_build
 
 function glibc_download
 {
-  atomic_wget "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.4.1.tar.xz" "$ARCHIVES/linux.tar.xz"
-  atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-2.22.tar.xz" "$ARCHIVES/glibc.tar.xz"
+  atomic_wget "https://cdn.kernel.org/pub/linux/kernel/v3.x/linux-$KERNEL_VERSION.tar.xz" "$ARCHIVES/linux.tar.xz"
+  atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-$GLIBC_VERSION.tar.xz" "$ARCHIVES/glibc.tar.xz"
 }
 
 function glibc_build
 {
   extract_to $ARCHIVES/linux.tar.xz src/linux
-  $MAKE -C src/linux ARCH=x86 INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
+ $MAKE -C src/linux ARCH=x86 INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
 
   extract_to $ARCHIVES/glibc.tar.xz src/glibc
+  if [ "$GLIBC_VERSION" == "2.17" ] ; then
+    patch -d src/glibc -i $scriptDir/patches/glibc.diff
+  fi
   mkdir -p bin/glibc
 
   pushd bin/glibc
-  ../../src/glibc/configure --prefix=$PREFIX/$TARGET --host=$TARGET --target=$TARGET --with-headers=$PREFIX/$TARGET/include --without-selinux
+  ../../src/glibc/configure \
+      --prefix=$PREFIX/$TARGET \
+      --host=$TARGET \
+      --target=$TARGET \
+      --with-headers=$PREFIX/$TARGET/include \
+      --without-selinux \
+      --disable-werror
   popd
 
   $MAKE -C bin/glibc
@@ -160,6 +172,7 @@ function gcc_configure
      --disable-win32-registry \
      --disable-shared \
      --disable-multilib \
+     --disable-werror \
      --enable-sjlj-exceptions \
      --disable-java-awt \
      --without-x \
@@ -185,7 +198,7 @@ function gcc_build
 
 function gcc_install
 {
-	$MAKE install -C "$GCC_BIN"
+  $MAKE install -C "$GCC_BIN"
 }
 
 #------------------------------------------------------------------------------
@@ -202,7 +215,7 @@ function gdc_download
 
 function gdc_apply
 {
-	pushd src/gdc
+  pushd src/gdc
   git checkout origin/gdc-5
   git checkout $GDC_COMMIT
   ./setup-gcc.sh ../gcc
@@ -230,9 +243,9 @@ function extract_to
   local file=$1
   local dir=$2
 
-	tar xlf "$file"
-	rm -rf "$dir"
-	mv "`tar tlf $file 2>/dev/null | head -n 1 | cut -f 1 -d '/'`" "$dir"
+  tar xlf "$file"
+  rm -rf "$dir"
+  mv "`tar tlf $file 2>/dev/null | head -n 1 | cut -f 1 -d '/'`" "$dir"
 }
 
 function lazy
