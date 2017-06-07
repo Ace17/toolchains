@@ -114,6 +114,9 @@ function glibc_build
  $MAKE -C src/linux ARCH=x86 INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
 
   extract_to $ARCHIVES/glibc.tar.xz src/glibc
+  if [ "$GLIBC_VERSION" == "2.17" ] ; then
+    patch -d src/glibc -i $scriptDir/patches/glibc.diff
+  fi
   mkdir -p bin/glibc
 
   pushd bin/glibc
