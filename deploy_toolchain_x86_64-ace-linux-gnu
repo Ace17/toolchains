@@ -25,6 +25,8 @@ readonly PREFIX=/tmp/toolchains/gcc-$TARGET # the resulting toolchain will land 
 readonly SERVER_URL=http://ftp.gnu.org/gnu
 readonly GCC_VERSION=5.4.0
 readonly BINUTILS_VERSION=2.26
+readonly GLIBC_VERSION=2.22
+readonly KERNEL_VERSION=4.4.1
 readonly GDC_COMMIT=55bb5b0e5da16522aeaa9ec62dfc5a23fe2be44c
 
 readonly GCC_LANGS="c,c++,d"
@@ -102,8 +104,8 @@ function binutils_build
 
 function glibc_download
 {
-  atomic_wget "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.4.1.tar.xz" "$ARCHIVES/linux.tar.xz"
-  atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-2.22.tar.xz" "$ARCHIVES/glibc.tar.xz"
+  atomic_wget "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-$KERNEL_VERSION.tar.xz" "$ARCHIVES/linux.tar.xz"
+  atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-$GLIBC_VERSION.tar.xz" "$ARCHIVES/glibc.tar.xz"
 }
 
 function glibc_build
