@@ -77,12 +77,12 @@ readonly BINUTILS_BIN=bin/binutils
 
 function binutils_download
 {
-  atomic_wget "$SERVER_URL/binutils/binutils-$BINUTILS_VERSION.tar.bz2" "$ARCHIVES/binutils.tar.bz2"
+  atomic_wget "$SERVER_URL/binutils/binutils-$BINUTILS_VERSION.tar.bz2" "$ARCHIVES/binutils-$BINUTILS_VERSION.tar.bz2"
 }
 
 function binutils_build
 {
-  extract_to "$ARCHIVES/binutils.tar.bz2" $BINUTILS_SRC
+  extract_to "$ARCHIVES/binutils-$BINUTILS_VERSION.tar.bz2" $BINUTILS_SRC
 
   rm -rf "$BINUTILS_BIN"
   mkdir -p "$BINUTILS_BIN"
@@ -105,14 +105,14 @@ function binutils_build
 
 function sysheaders_download
 {
-  atomic_wget "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-$KERNEL_VERSION.tar.xz" "$ARCHIVES/linux.tar.xz"
-  atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-$GLIBC_VERSION.tar.xz" "$ARCHIVES/glibc.tar.xz"
+  atomic_wget "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-$KERNEL_VERSION.tar.xz" "$ARCHIVES/linux-$KERNEL_VERSION.tar.xz"
+  atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-$GLIBC_VERSION.tar.xz" "$ARCHIVES/glibc-$GLIBC_VERSION.tar.xz"
 }
 
 function sysheaders_extract
 {
-  extract_to $ARCHIVES/linux.tar.xz src/linux
-  extract_to $ARCHIVES/glibc.tar.xz src/glibc
+  extract_to $ARCHIVES/linux-$KERNEL_VERSION.tar.xz src/linux
+  extract_to $ARCHIVES/glibc-$GLIBC_VERSION.tar.xz src/glibc
 }
 
 function sysheaders_build
@@ -146,12 +146,12 @@ readonly GCC_BIN=bin/gcc
 
 function gcc_download
 {
-  atomic_wget "$SERVER_URL/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2" $ARCHIVES/gcc.tar.bz2
+  atomic_wget "$SERVER_URL/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2" $ARCHIVES/gcc-$GCC_VERSION.tar.bz2
 }
 
 function gcc_extract
 {
-  extract_to $ARCHIVES/gcc.tar.bz2 $GCC_SRC
+  extract_to $ARCHIVES/gcc-$GCC_VERSION.tar.bz2 $GCC_SRC
 
   pushd $GCC_SRC
   ./contrib/download_prerequisites
@@ -239,7 +239,7 @@ function atomic_wget
     return 0;
   fi
   mkdir -p $(dirname $output)
-  wget "$url" -O ${output}.incomplete
+  wget "$url" --quiet --show-progress -O ${output}.incomplete
   mv "${output}.incomplete" "$output"
 }
 

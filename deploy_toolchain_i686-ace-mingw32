@@ -78,12 +78,12 @@ readonly BINUTILS_BIN=bin/binutils
 
 function binutils_download
 {
-  atomic_wget "$SERVER_URL/binutils/binutils-$BINUTILS_VERSION.tar.bz2" "$ARCHIVES/binutils.tar.bz2"
+  atomic_wget "$SERVER_URL/binutils/binutils-$BINUTILS_VERSION.tar.bz2" "$ARCHIVES/binutils-$BINUTILS_VERSION.tar.bz2"
 }
 
 function binutils_build
 {
-  extract_to "$ARCHIVES/binutils.tar.bz2" $BINUTILS_SRC
+  extract_to "$ARCHIVES/binutils-$BINUTILS_VERSION.tar.bz2" $BINUTILS_SRC
 
   rm -rf "$BINUTILS_BIN"
   mkdir -p "$BINUTILS_BIN"
@@ -153,12 +153,12 @@ readonly GCC_BIN=bin/gcc
 
 function gcc_download
 {
-  atomic_wget "$SERVER_URL/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2" $ARCHIVES/gcc.tar.bz2
+  atomic_wget "$SERVER_URL/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2" $ARCHIVES/gcc-$GCC_VERSION.tar.bz2
 }
 
 function gcc_extract
 {
-  extract_to $ARCHIVES/gcc.tar.bz2 $GCC_SRC
+  extract_to $ARCHIVES/gcc-$GCC_VERSION.tar.bz2 $GCC_SRC
 
   pushd $GCC_SRC
   ./contrib/download_prerequisites
@@ -247,7 +247,7 @@ function atomic_wget
     return 0;
   fi
   mkdir -p $(dirname $output)
-  wget "$url" -O ${output}.incomplete
+  wget "$url" --quiet --show-progress -O ${output}.incomplete
   mv "${output}.incomplete" "$output"
 }
 
