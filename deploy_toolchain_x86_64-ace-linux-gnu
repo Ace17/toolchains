@@ -63,7 +63,7 @@ function main
   lazy gcc_standalone_build
 # lazy gcc_standalone_install
 
-# lazy sysheaders_build
+  lazy sysheaders_build
 
 # lazy gcc_build
 # lazy gcc_install
