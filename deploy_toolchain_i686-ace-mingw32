@@ -93,6 +93,7 @@ function binutils_build
     --prefix="$PREFIX" \
     --target=$TARGET \
     --disable-nls --with-gcc --with-gnu-as --with-gnu-ld \
+    --disable-werror \
     --disable-shared 2>&1 >/dev/null
   popd
 

@@ -19,6 +19,7 @@ set -euo pipefail
 # 7) install gcc: make install
 #-------------------------------------------------------------------------------
 readonly VENDOR=ace # replace with anything you like
+#readonly TARGET=arm-${VENDOR}-linux-gnueabihf
 readonly TARGET=x86_64-${VENDOR}-linux-gnu
 readonly PREFIX=/tmp/toolchains/gcc-$TARGET # the resulting toolchain will land here
 
@@ -54,12 +55,13 @@ function main
 
   lazy binutils_build
 
-  lazy glibc_build
-
   lazy gcc_extract
   lazy gdc_apply
   lazy gcc_configure
   lazy gcc_standalone_build
+
+  lazy glibc_build
+
   lazy gcc_standalone_install
   lazy gcc_build
   lazy gcc_install
@@ -91,6 +93,7 @@ function binutils_build
     --prefix="$PREFIX" \
     --target=$TARGET \
     --disable-nls --with-gcc --with-gnu-as --with-gnu-ld \
+    --disable-werror \
     --disable-shared 2>&1 >/dev/null
   popd
 
@@ -117,20 +120,34 @@ function glibc_build
   if [ "$GLIBC_VERSION" == "2.17" ] ; then
     patch -d src/glibc -i $scriptDir/patches/glibc.diff
   fi
+
+  # add the freshly built cross compiler to the PATH
+  export PATH="$PREFIX/bin:$PATH"
+
   mkdir -p bin/glibc
 
   pushd bin/glibc
   ../../src/glibc/configure \
     --prefix=$PREFIX/$TARGET \
+    --build=$MACHTYPE \
     --host=$TARGET \
     --target=$TARGET \
     --with-headers=$PREFIX/$TARGET/include \
     --without-selinux \
-    --disable-werror
+    --disable-multilib \
+    --disable-werror \
+     libc_cv_forced_unwind=yes
   popd
+
+  $MAKE -C bin/glibc install-bootstrap-headers=yes install-headers
+  $MAKE -C bin/glibc csu/subdir_lib
 
   $MAKE -C bin/glibc
   $MAKE -C bin/glibc install
+
+  # install csu/crt1.o csu/crti.o csu/crtn.o /opt/cross/aarch64-linux/lib
+  # aarch64-linux-gcc -nostdlib -nostartfiles -shared -x c /dev/null -o /opt/cross/aarch64-linux/lib/libc.so
+  # touch /opt/cross/aarch64-linux/include/gnu/stubs.h
 }
 
 ##-------------------------------------------------------------------------------
@@ -161,6 +178,7 @@ function gcc_configure
   $dir/configure \
     -v \
     --disable-bootstrap \
+     --without-headers \
      --enable-targets=all \
      --prefix="$PREFIX" \
      --target="$TARGET" \
@@ -180,13 +198,13 @@ function gcc_configure
 
 function gcc_standalone_build
 {
-  $MAKE all-gcc           -C "$GCC_BIN"
-  $MAKE all-target-libgcc -C "$GCC_BIN"
+  $MAKE all-gcc     -C "$GCC_BIN"
+  $MAKE install-gcc -C "$GCC_BIN"
 }
 
 function gcc_standalone_install
 {
-  $MAKE -C "$GCC_BIN" install-gcc
+  $MAKE all-target-libgcc -C "$GCC_BIN"
 }
 
 function gcc_build
