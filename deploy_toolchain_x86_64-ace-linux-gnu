@@ -61,12 +61,12 @@ function main
   lazy gdc_apply
   lazy gcc_configure
   lazy gcc_standalone_build
-# lazy gcc_standalone_install
+  lazy gcc_standalone_install
 
   lazy sysheaders_build
 
-# lazy gcc_build
-# lazy gcc_install
+  lazy gcc_build
+  lazy gcc_install
 
   echo "==============="
   echo "Done"
@@ -194,12 +194,10 @@ function gcc_configure
 function gcc_standalone_build
 {
   $MAKE all-gcc           -C "$GCC_BIN"
-  $MAKE install-gcc       -C "$GCC_BIN"
 }
 
 function gcc_standalone_install
 {
-  $MAKE all-target-libgcc -C "$GCC_BIN"
   $MAKE -C "$GCC_BIN" install-gcc
 }
 
