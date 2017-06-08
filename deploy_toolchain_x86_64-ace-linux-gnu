@@ -239,7 +239,8 @@ function atomic_wget
     return 0;
   fi
   mkdir -p $(dirname $output)
-  wget "$url" -O $output
+  wget "$url" -O ${output}.incomplete
+  mv "${output}.incomplete" "$output"
 }
 
 function extract_to
