@@ -25,9 +25,9 @@ readonly PREFIX=/tmp/toolchains/gcc-$TARGET # the resulting toolchain will land 
 readonly SERVER_URL=http://ftp.gnu.org/gnu
 readonly GCC_VERSION=5.4.0
 readonly BINUTILS_VERSION=2.26
+readonly GDC_COMMIT=55bb5b0e5da16522aeaa9ec62dfc5a23fe2be44c
 readonly GLIBC_VERSION=2.22
 readonly KERNEL_VERSION=4.4.1
-readonly GDC_COMMIT=55bb5b0e5da16522aeaa9ec62dfc5a23fe2be44c
 
 readonly GCC_LANGS="c,c++,d"
 
@@ -54,6 +54,7 @@ function main
 
   lazy binutils_build
 
+  lazy sysheaders_extract
   lazy sysheaders_build
 
   lazy gcc_extract
@@ -108,12 +109,16 @@ function sysheaders_download
   atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-$GLIBC_VERSION.tar.xz" "$ARCHIVES/glibc.tar.xz"
 }
 
-function sysheaders_build
+function sysheaders_extract
 {
   extract_to $ARCHIVES/linux.tar.xz src/linux
+  extract_to $ARCHIVES/glibc.tar.xz src/glibc
+}
+
+function sysheaders_build
+{
  $MAKE -C src/linux ARCH=x86 INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
 
-  extract_to $ARCHIVES/glibc.tar.xz src/glibc
   if [ "$GLIBC_VERSION" == "2.17" ] ; then
     patch -d src/glibc -i $scriptDir/patches/glibc.diff
   fi
