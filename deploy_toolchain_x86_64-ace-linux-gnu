@@ -210,18 +210,19 @@ function gcc_install
 #------------------------------------------------------------------------------
 function gdc_download
 {
-  if [ -d src/gdc ] ; then
+  if [ -d $ARCHIVES/gdc ] ; then
     echo "Already downloaded: gdc"
     return 0;
   fi
-  git clone https://github.com/D-Programming-GDC/GDC.git src/gdc
+  git clone https://github.com/D-Programming-GDC/GDC.git $ARCHIVES/gdc
 }
 
 function gdc_apply
 {
+  cp -a $ARCHIVES/gdc src/gdc
   pushd src/gdc
-  git checkout origin/gdc-5
-  git checkout $GDC_COMMIT
+  git checkout -q origin/gdc-5
+  git checkout -q $GDC_COMMIT
   ./setup-gcc.sh ../gcc
   popd
 }
