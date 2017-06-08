@@ -14,7 +14,7 @@ set -euo pipefail
 # 2) install the binutils: make install
 # 3) build the core-gcc, configure with --target=$(TARGET), make all-gcc
 # 4) install the core-gcc: make install-gcc
-# 5) build the mingw runtime (libc) using the core-gcc
+# 5) build the system headers + libs (libc + OS API) using the core-gcc
 # 6) finish building gcc: go back to the core-gcc build directory and run "make"
 # 7) install gcc: make install
 #-------------------------------------------------------------------------------
@@ -48,12 +48,12 @@ function main
   binutils_download
   gcc_download
   gdc_download
-  mingw64_download
+  sysheaders_download
 
   lazy binutils_build
 
-  lazy mingw64_extract
-  lazy mingw64_install_headers
+  lazy sysheaders_extract
+  lazy sysheaders_install_headers
 
   lazy gcc_extract
   lazy gdc_apply
@@ -61,7 +61,7 @@ function main
   lazy gcc_standalone_build
   lazy gcc_standalone_install
 
-  lazy mingw64_build
+  lazy sysheaders_build
 
   lazy gcc_build
   lazy gcc_install
@@ -101,22 +101,22 @@ function binutils_build
 }
 
 #-------------------------------------------------------------------------------
-# MINGW 64 (LIBC)
+# System headers (LIBC + OS headers)
 #-------------------------------------------------------------------------------
 MINGW64_SRC=src/mingw64
 MINGW64_BIN=bin/mingw64
 
-function mingw64_download
+function sysheaders_download
 {
   atomic_wget "http://downloads.sourceforge.net/project/mingw-w64/mingw-w64/mingw-w64-release/mingw-w64-v3.0.0.tar.bz2" "$ARCHIVES/mingw64.tar.bz2"
 }
 
-function mingw64_extract
+function sysheaders_extract
 {
   extract_to $ARCHIVES/mingw64.tar.bz2 $MINGW64_SRC
 }
 
-function mingw64_install_headers # "sys-include"
+function sysheaders_install_headers
 {
   rm -rf "bin/mingw64-headers"
   mkdir -p "bin/mingw64-headers"
@@ -130,7 +130,7 @@ function mingw64_install_headers # "sys-include"
   $MAKE -C bin/mingw64-headers install
 }
 
-function mingw64_build
+function sysheaders_build
 {
   rm -rf "$MINGW64_BIN"
   mkdir -p "$MINGW64_BIN"

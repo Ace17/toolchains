@@ -14,7 +14,7 @@ set -euo pipefail
 # 2) install the binutils: make install
 # 3) build the core-gcc, configure with --target=$(TARGET), make all-gcc
 # 4) install the core-gcc: make install-gcc
-# 5) build the GNU libc runtime (libc) using the core-gcc
+# 5) build the system headers + libs (libc + OS API) using the core-gcc
 # 6) finish building gcc: go back to the core-gcc build directory and run "make"
 # 7) install gcc: make install
 #-------------------------------------------------------------------------------
@@ -50,11 +50,11 @@ function main
   binutils_download
   gcc_download
   gdc_download
-  glibc_download
+  sysheaders_download
 
   lazy binutils_build
 
-  lazy glibc_build
+  lazy sysheaders_build
 
   lazy gcc_extract
   lazy gdc_apply
@@ -99,16 +99,16 @@ function binutils_build
 }
 
 #-------------------------------------------------------------------------------
-# GLIBC (LIBC)
+# System headers (LIBC + OS headers)
 #-------------------------------------------------------------------------------
 
-function glibc_download
+function sysheaders_download
 {
   atomic_wget "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-$KERNEL_VERSION.tar.xz" "$ARCHIVES/linux.tar.xz"
   atomic_wget "http://ftp.gnu.org/gnu/glibc/glibc-$GLIBC_VERSION.tar.xz" "$ARCHIVES/glibc.tar.xz"
 }
 
-function glibc_build
+function sysheaders_build
 {
   extract_to $ARCHIVES/linux.tar.xz src/linux
  $MAKE -C src/linux ARCH=x86 INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
@@ -161,6 +161,7 @@ function gcc_configure
   $dir/configure \
     -v \
     --disable-bootstrap \
+     --without-headers \
      --enable-targets=all \
      --prefix="$PREFIX" \
      --target="$TARGET" \
