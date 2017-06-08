@@ -262,7 +262,7 @@ function lazy
   fi
 
   echo "$func ..."
-  $func & # fork: prevent the callee to change the caller's environment
+  $func >/dev/null & # fork: prevent the callee to change the caller's environment
   pid=$!
   if ! wait $pid ; then
     echo "Failure with: $func"
