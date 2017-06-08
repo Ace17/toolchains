@@ -266,12 +266,13 @@ function lazy
 {
   local readonly func="$1"
 
+  printf "*******[ %32s ] *******\n" "$func"
+
   mkdir -p flags
   if [ -f flags/$func ] ; then
     return 0
   fi
 
-  echo "$func ..."
   $func >/dev/null & # fork: prevent the callee to change the caller's environment
   pid=$!
   if ! wait $pid ; then
@@ -280,6 +281,7 @@ function lazy
   fi
 
   touch flags/$func
+  echo ""
 }
 
 main "$@"
