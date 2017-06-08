@@ -55,15 +55,18 @@ function main
   lazy binutils_build
 
   lazy sysheaders_extract
-  lazy sysheaders_build
+  lazy sysheaders_install_headers
 
   lazy gcc_extract
   lazy gdc_apply
   lazy gcc_configure
   lazy gcc_standalone_build
-  lazy gcc_standalone_install
-  lazy gcc_build
-  lazy gcc_install
+# lazy gcc_standalone_install
+
+# lazy sysheaders_build
+
+# lazy gcc_build
+# lazy gcc_install
 
   echo "==============="
   echo "Done"
@@ -115,9 +118,13 @@ function sysheaders_extract
   extract_to $ARCHIVES/glibc-$GLIBC_VERSION.tar.xz src/glibc
 }
 
-function sysheaders_build
+function sysheaders_install_headers
 {
  $MAKE -C src/linux ARCH=x86 INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
+}
+
+function sysheaders_build
+{
 
   if [ "$GLIBC_VERSION" == "2.17" ] ; then
     patch -d src/glibc -i $scriptDir/patches/glibc.diff
@@ -187,11 +194,12 @@ function gcc_configure
 function gcc_standalone_build
 {
   $MAKE all-gcc           -C "$GCC_BIN"
-  $MAKE all-target-libgcc -C "$GCC_BIN"
+  $MAKE install-gcc       -C "$GCC_BIN"
 }
 
 function gcc_standalone_install
 {
+  $MAKE all-target-libgcc -C "$GCC_BIN"
   $MAKE -C "$GCC_BIN" install-gcc
 }
 
