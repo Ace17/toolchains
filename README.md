@@ -72,7 +72,9 @@ following steps:
 
 * Build GCC: host part.
   This step will is achieved by running:
-  $ make all-host
+  
+  `$ make all-host`
+  
   A working compiler will be created. This compiler will enable to create ".o"
   files for the target. But at this stage you won't be able to link a full
   executable program, because the runtime libraries (crt1.o) are not built yet.
